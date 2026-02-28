@@ -299,16 +299,36 @@ class GiftEvalDataset(Dataset[dict[str, Any]]):
 
 
 def collate_fn(batch: list[dict[str, Any]]) -> dict[str, Any]:
-    """Custom collate that handles variable prediction lengths and string fields."""
-    # Tensors with identical shapes can be stacked directly.
-    # String and int fields are collected into lists.
+    """Custom collate that handles variable prediction lengths and string fields.
+
+    When ``prediction_length=None`` is used, different series may have different
+    horizon lengths (set by their frequency default).  Tensors whose last
+    dimension equals ``prediction_length`` are padded to the longest horizon in
+    the batch; the ``mask`` is extended with ``False`` for padding positions so
+    the loss ignores them.
+    """
     string_keys = {"freq", "dataset_name", "item_id"}
     int_keys = {"prediction_length", "window_start"}
+    # Keys whose trailing dimension is prediction_length and may vary per item.
+    pad_keys = {"target", "target_raw", "mask"}
+
+    max_pred_len: int = max(item["prediction_length"] for item in batch)
 
     out: dict[str, Any] = {}
     for key in batch[0]:
         if key in string_keys or key in int_keys:
             out[key] = [item[key] for item in batch]
+        elif key in pad_keys:
+            padded: list[torch.Tensor] = []
+            for item in batch:
+                t: torch.Tensor = item[key]  # type: ignore[assignment]
+                pad = max_pred_len - t.shape[-1]
+                if pad > 0:
+                    # bool tensors (mask) padded with False; float tensors with 0
+                    fill = False if t.dtype == torch.bool else 0.0
+                    t = torch.nn.functional.pad(t, (0, pad), value=fill)  # type: ignore[arg-type]
+                padded.append(t)
+            out[key] = torch.stack(padded)
         else:
             out[key] = torch.stack([item[key] for item in batch])  # type: ignore[arg-type]
     return out

@@ -9,14 +9,11 @@ Usage
 from __future__ import annotations
 
 import logging
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
 import tyro
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -44,11 +41,7 @@ class ExploreConfig:
 
 def list_all_subsets() -> None:
     """Print all available GiftEvalPretrain subset names."""
-    try:
-        from datasets import get_dataset_config_names  # type: ignore[import-untyped]
-    except ImportError as err:
-        logger.error("datasets package not installed. Run: uv add datasets")
-        raise SystemExit(1) from err
+    from datasets import get_dataset_config_names
 
     names = get_dataset_config_names("theforecastingcompany/GiftEvalPretrain")
     print(f"Found {len(names)} subsets:")
@@ -58,11 +51,7 @@ def list_all_subsets() -> None:
 
 def explore_subset(name: str, max_series: int, cache_dir: Path | None) -> None:
     """Load and print summary statistics for subset *name*."""
-    try:
-        from datasets import load_dataset  # type: ignore[import-untyped]
-    except ImportError as err:
-        logger.error("datasets package not installed. Run: uv add datasets")
-        raise SystemExit(1) from err
+    from datasets import load_dataset
 
     from tsfc.data.utils import nan_fraction, normalize_freq
 
