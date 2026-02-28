@@ -1,0 +1,37 @@
+data:
+  subsets:
+    - traffic_hourly
+    - weather
+    - m5
+    - monash_m3_monthly
+  context_length: 512
+  prediction_length: null   # null = use freq-based default
+  val_frac: 0.2
+  max_windows_per_series: 10
+  batch_size: 64
+  num_workers: 4
+
+models:
+  names:
+    - chronos2
+    - timesfm25
+    - moirai2
+  cache_dir: cache/predictions/
+
+mixture:
+  adaptive: false            # true = MetaWeighter MLP; false = global scalar weights
+  context_feature_dim: 5
+
+training:
+  loss: mase                 # "mae" | "mase" | "crps"
+  lr: 0.01
+  epochs: 50
+  device: cuda
+  log_every_n_steps: 10
+  checkpoint_dir: checkpoints/
+
+eval:
+  metrics:
+    - mase
+    - crps
+  output_file: results/eval.json

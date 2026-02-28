@@ -1,0 +1,17 @@
+{
+    "typeCheckingMode": "strict",
+    "pythonVersion": "3.11",
+    "venvPath": ".",
+    "venv": ".venv",
+    "include": ["tsfc", "scripts", "tests"],
+    "exclude": ["**/__pycache__"],
+    "reportMissingTypeStubs": "none",
+    "reportUnknownMemberType": "none",
+    "reportUnknownVariableType": "none",
+    "reportUnknownArgumentType": "none",
+    "reportUnknownParameterType": "none",
+    "reportUnknownLambdaType": "none",
+    "reportMissingModuleSource": "none",
+    "reportPrivateUsage": "none",
+    "reportAttributeAccessIssue": "warning"
+}
