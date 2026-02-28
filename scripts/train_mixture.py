@@ -13,14 +13,11 @@ Usage
 from __future__ import annotations
 
 import logging
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import torch
 import tyro
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from tsfc.data.gifteval import GiftEvalDataModule, GiftEvalDataModuleConfig
 from tsfc.models.mixture import WeightedMixture

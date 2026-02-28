@@ -19,15 +19,11 @@ Cache layout::
 from __future__ import annotations
 
 import logging
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import torch
 import tyro
-
-# Ensure project root is on the path when running as a script
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from tsfc.data.gifteval import GiftEvalDataset
 from tsfc.data.transforms import denormalize

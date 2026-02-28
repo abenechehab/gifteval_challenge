@@ -74,10 +74,10 @@ class MoiraiModel(ForecastingModel):
 
     def predict(
         self,
-        context: np.ndarray,
+        context: np.ndarray[Any, np.dtype[np.floating[Any]]],
         prediction_length: int,
         freq: str,
-        past_covariates: np.ndarray | None = None,
+        past_covariates: np.ndarray[Any, np.dtype[np.floating[Any]]] | None = None,
     ) -> ForecastResult:
         """Run Moirai-2 inference.
 
@@ -114,8 +114,8 @@ class MoiraiModel(ForecastingModel):
             target_dim=n_variates,
             feat_dynamic_real_dim=0,
             past_feat_dynamic_real_dim=past_cov_dim,
-            patch_size="auto",
-            num_samples=self.num_samples,
+            # patch_size="auto",
+            # num_samples=self.num_samples,
         ).to(self.device)
 
         # Build a GluonTS ListDataset entry
@@ -137,7 +137,7 @@ class MoiraiModel(ForecastingModel):
 
         # samples: (num_samples, prediction_length) for univariate,
         #          (num_samples, n_variates, prediction_length) for multivariate
-        raw_samples: np.ndarray = np.asarray(forecasts[0].samples)
+        raw_samples: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(forecasts[0].samples)
 
         if raw_samples.ndim == 2:
             # Univariate: expand to (1, num_samples, H) → (V=1, num_samples, H)
@@ -149,7 +149,7 @@ class MoiraiModel(ForecastingModel):
         # (V, H)
         point = np.median(raw_samples, axis=1)
 
-        quantile_forecasts: dict[float, np.ndarray] = {
+        quantile_forecasts: dict[float, np.ndarray[Any, np.dtype[np.floating[Any]]]] = {
             q: np.quantile(raw_samples, q, axis=1) for q in _QUANTILE_LEVELS
         }
 

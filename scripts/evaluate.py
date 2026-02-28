@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import json
 import logging
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -23,8 +22,6 @@ from typing import Any
 import numpy as np
 import torch
 import tyro
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from tsfc.data.gifteval import GiftEvalDataset
 from tsfc.eval.metrics import evaluate_dataset
@@ -72,10 +69,10 @@ class CachedMixtureModel(ForecastingModel):
 
     def predict(
         self,
-        context: np.ndarray,
+        context: np.ndarray[Any, np.dtype[np.floating[Any]]],
         prediction_length: int,
         freq: str,
-        past_covariates: np.ndarray | None = None,
+        past_covariates: np.ndarray[Any, np.dtype[np.floating[Any]]] | None = None,
     ) -> ForecastResult:
         raise NotImplementedError(
             "CachedMixtureModel.predict() is not implemented for single-item evaluation. "

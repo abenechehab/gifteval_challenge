@@ -70,10 +70,10 @@ class Chronos2Model(ForecastingModel):
 
     def predict(
         self,
-        context: np.ndarray,
+        context: np.ndarray[Any, np.dtype[np.floating[Any]]],
         prediction_length: int,
         freq: str,
-        past_covariates: np.ndarray | None = None,
+        past_covariates: np.ndarray[Any, np.dtype[np.floating[Any]]] | None = None,
     ) -> ForecastResult:
         """Run Chronos-2 inference.
 
@@ -127,7 +127,7 @@ class Chronos2Model(ForecastingModel):
             [pred_df[pred_df["id"] == f"v{v}"]["0.5"].to_numpy() for v in range(n_variates)]
         )  # (n_variates, prediction_length)
 
-        quantile_forecasts: dict[float, np.ndarray] = {
+        quantile_forecasts: dict[float, np.ndarray[Any, np.dtype[np.floating[Any]]]] = {
             q: np.stack(
                 [
                     pred_df[pred_df["id"] == f"v{v}"][str(q)].to_numpy()

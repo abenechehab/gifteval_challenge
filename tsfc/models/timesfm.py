@@ -45,11 +45,14 @@ class TimesFMModel(ForecastingModel):
         model_id: str = "google/timesfm-2.5-200m-pytorch",
         max_context: int = 1024,
         max_horizon: int = 256,
+        device: str = "cuda",
     ) -> None:
         self.model_id = model_id
         self.max_context = max_context
         self.max_horizon = max_horizon
+        self.device = device
         self._model: Any = None  # loaded lazily
+
 
     def _load(self) -> None:
         """Lazy-load TimesFM (runs once)."""
@@ -78,14 +81,14 @@ class TimesFMModel(ForecastingModel):
                 fix_quantile_crossing=True,
             )
         )
-        self._model = model
+        self._model = model.to(self.device)
 
     def predict(
         self,
-        context: np.ndarray,
+        context: np.ndarray[Any, np.dtype[np.floating[Any]]],
         prediction_length: int,
         freq: str,
-        past_covariates: np.ndarray | None = None,
+        past_covariates: np.ndarray[Any, np.dtype[np.floating[Any]]] | None = None,
     ) -> ForecastResult:
         """Run TimesFM inference for each variate independently.
 
@@ -120,7 +123,7 @@ class TimesFMModel(ForecastingModel):
         point = np.asarray(point_raw)  # (n_variates, H)
         q_arr = np.asarray(q_raw)  # (n_variates, H, n_q)
 
-        quantile_forecasts: dict[float, np.ndarray] = {
+        quantile_forecasts: dict[float, np.ndarray[Any, np.dtype[np.floating[Any]]]] = {
             q: q_arr[:, :, i] for i, q in enumerate(_QUANTILE_LEVELS)
         }
 

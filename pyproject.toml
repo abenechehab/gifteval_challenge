@@ -21,10 +21,10 @@ chronos = [
     "chronos-forecasting>=2.1.0",
 ]
 moirai = [
-    "uni2ts>=1.2.0",
+    "uni2ts @ git+https://github.com/SalesforceAIResearch/uni2ts.git",
 ]
 timesfm = [
-    "timesfm>=1.0.0",
+    "timesfm @ git+https://github.com/google-research/timesfm.git",
 ]
 
 [build-system]
@@ -33,6 +33,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["tsfc"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 # ---------------------------------------------------------------------------
 # Ruff — linting + formatting

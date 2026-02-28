@@ -67,7 +67,7 @@ uv sync --extra chronos
 
 ```bash
 uv sync --extra timesfm
-# installs: timesfm>=1.0.0
+# installs: timesfm from git+https://github.com/google-research/timesfm.git
 ```
 
 #### Moirai-2
