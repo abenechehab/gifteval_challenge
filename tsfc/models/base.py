@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from typing import Any
 
 import numpy as np
 
@@ -21,8 +22,8 @@ class ForecastResult:
         Each value has shape ``(n_variates, horizon)``.
     """
 
-    point_forecast: np.ndarray
-    quantile_forecasts: dict[float, np.ndarray] | None = field(default=None)
+    point_forecast: np.ndarray[Any, np.dtype[np.floating[Any]]]
+    quantile_forecasts: dict[float, np.ndarray[Any, np.dtype[np.floating[Any]]]] | None = field(default=None)
 
 
 class ForecastingModel(ABC):
@@ -38,10 +39,10 @@ class ForecastingModel(ABC):
     @abstractmethod
     def predict(
         self,
-        context: np.ndarray,
+        context: np.ndarray[Any, np.dtype[np.floating[Any]]],
         prediction_length: int,
         freq: str,
-        past_covariates: np.ndarray | None = None,
+        past_covariates: np.ndarray[Any, np.dtype[np.floating[Any]]] | None = None,
     ) -> ForecastResult:
         """Run zero-shot inference and return a :class:`ForecastResult`.
 
@@ -64,7 +65,7 @@ class ForecastingModel(ABC):
 
     def batch_predict(
         self,
-        contexts: list[np.ndarray],
+        contexts: list[np.ndarray[Any, np.dtype[np.floating[Any]]]],
         prediction_lengths: list[int],
         freqs: list[str],
     ) -> list[ForecastResult]:

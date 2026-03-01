@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import torch
+from torch.utils.tensorboard.writer import SummaryWriter
 
 from tsfc.data.transforms import extract_context_features
 from tsfc.models.mixture import WeightedMixture
@@ -36,6 +37,7 @@ class TrainingConfig:
     context_feature_dim: int = 5
     log_every_n_steps: int = 10
     checkpoint_dir: Path = field(default_factory=lambda: Path("checkpoints"))
+    tensorboard_log_dir: Path | None = None  # set to enable TensorBoard logging
 
 
 # ---------------------------------------------------------------------------
@@ -113,10 +115,19 @@ def train_mixture(
     device = torch.device(config.device if torch.cuda.is_available() else "cpu")
     mixture = mixture.to(device)
 
-    optimizer = torch.optim.Adam(mixture.parameters(), lr=config.lr) # type: ignore
+    optimizer = torch.optim.Adam(mixture.parameters(), lr=config.lr)  # type: ignore
 
     history: dict[str, list[float]] = {"train_loss": [], "val_loss": []}
     config.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+    # TensorBoard writer (None when tensorboard is not installed or not configured)
+    writer = None
+    if config.tensorboard_log_dir is not None:
+        config.tensorboard_log_dir.mkdir(parents=True, exist_ok=True)
+        writer = SummaryWriter(log_dir=str(config.tensorboard_log_dir))
+        logger.info("TensorBoard logging to %s", config.tensorboard_log_dir)
+
+    global_step = 0  # incremented every training step
 
     for epoch in range(1, config.epochs + 1):
         mixture.train()
@@ -183,16 +194,51 @@ def train_mixture(
 
             optimizer.zero_grad()
             loss.backward()
+
+            # --- gradient norms (before optimizer step) ---
+            total_grad_norm = 0.0
+            for name, param in mixture.named_parameters():
+                if param.grad is not None:
+                    param_grad_norm = param.grad.detach().norm(2).item()
+                    total_grad_norm += param_grad_norm**2
+                    if writer is not None:
+                        writer.add_scalar(f"grad_norm/{name}", param_grad_norm, global_step)
+            total_grad_norm = total_grad_norm**0.5
+
             optimizer.step()
+
+            # --- mixture weights (batch-averaged) ---
+            with torch.no_grad():
+                batch_weights = mixture.get_weights(ctx_feats, batch_size=len(valid_indices)).mean(
+                    dim=0
+                )  # (n_models,)
 
             epoch_losses.append(loss.item())
 
+            if writer is not None:
+                writer.add_scalar("train/loss_step", loss.item(), global_step)
+                writer.add_scalar("train/grad_norm", total_grad_norm, global_step)
+                writer.add_scalar(
+                    "train/lr",
+                    optimizer.param_groups[0]["lr"],
+                    global_step,
+                )
+                for i, model_name in enumerate(config.model_names):
+                    writer.add_scalar(
+                        f"mixture/weight/{model_name}",
+                        batch_weights[i].item(),
+                        global_step,
+                    )
+
+            global_step += 1
+
             if (step + 1) % config.log_every_n_steps == 0:
                 logger.info(
-                    "Epoch %d | step %d | loss=%.4f",
+                    "Epoch %d | step %d | loss=%.4f | grad_norm=%.4f",
                     epoch,
                     step + 1,
                     float(torch.tensor(epoch_losses).mean()),
+                    total_grad_norm,
                 )
 
         avg_train = float(torch.tensor(epoch_losses).mean()) if epoch_losses else float("nan")
@@ -262,6 +308,32 @@ def train_mixture(
             elapsed,
         )
 
+        if writer is not None:
+            writer.add_scalar("train/loss_epoch", avg_train, epoch)
+            writer.add_scalar("train/epoch_time_s", elapsed, epoch)
+            if not torch.isnan(torch.tensor(avg_val)):
+                writer.add_scalar("val/loss_epoch", avg_val, epoch)
+
+            # Static mode: log raw log_weights and softmax weights per epoch
+            if not config.adaptive and hasattr(mixture, "log_weights"):
+                with torch.no_grad():
+                    static_w = torch.softmax(mixture.log_weights, dim=0)
+                    for i, model_name in enumerate(config.model_names):
+                        writer.add_scalar(
+                            f"mixture/weight_epoch/{model_name}",
+                            static_w[i].item(),
+                            epoch,
+                        )
+                        writer.add_scalar(
+                            f"mixture/log_weight/{model_name}",
+                            mixture.log_weights[i].item(),
+                            epoch,
+                        )
+
+            # Parameter norms (weights magnitude)
+            for name, param in mixture.named_parameters():
+                writer.add_scalar(f"param_norm/{name}", param.detach().norm(2).item(), epoch)
+
         # Save checkpoint
         ckpt_path = config.checkpoint_dir / f"mixture_epoch{epoch:03d}.pt"
         torch.save(
@@ -274,5 +346,8 @@ def train_mixture(
             },
             ckpt_path,
         )
+
+    if writer is not None:
+        writer.close()
 
     return history

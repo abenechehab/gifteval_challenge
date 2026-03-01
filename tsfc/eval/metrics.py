@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def mae(forecast: np.ndarray, target: np.ndarray, mask: np.ndarray | None = None) -> float:
+def mae(forecast: np.ndarray[Any, np.dtype[np.floating[Any]]], target: np.ndarray[Any, np.dtype[np.floating[Any]]], mask: np.ndarray[Any, np.dtype[np.floating[Any]]] | None = None) -> float:
     """Mean Absolute Error, optionally masked.
 
     Parameters
@@ -37,11 +37,11 @@ def mae(forecast: np.ndarray, target: np.ndarray, mask: np.ndarray | None = None
 
 
 def mase(
-    forecast: np.ndarray,
-    target: np.ndarray,
-    context: np.ndarray,
+    forecast: np.ndarray[Any, np.dtype[np.floating[Any]]],
+    target: np.ndarray[Any, np.dtype[np.floating[Any]]],
+    context: np.ndarray[Any, np.dtype[np.floating[Any]]],
     freq: str,
-    mask: np.ndarray | None = None,
+    mask: np.ndarray[Any, np.dtype[np.floating[Any]]] | None = None,
 ) -> float:
     """Mean Absolute Scaled Error (MASE).
 
@@ -77,9 +77,9 @@ def mase(
 
 
 def crps_from_samples(
-    samples: np.ndarray,
-    target: np.ndarray,
-    mask: np.ndarray | None = None,
+    samples: np.ndarray[Any, np.dtype[np.floating[Any]]],
+    target: np.ndarray[Any, np.dtype[np.floating[Any]]],
+    mask: np.ndarray[Any, np.dtype[np.floating[Any]]] | None = None,
 ) -> float:
     """Continuous Ranked Probability Score estimated from samples.
 
@@ -110,10 +110,10 @@ def crps_from_samples(
 
 
 def wql(
-    quantile_forecasts: dict[float, np.ndarray],
-    target: np.ndarray,
+    quantile_forecasts: dict[float, np.ndarray[Any, np.dtype[np.floating[Any]]]],
+    target: np.ndarray[Any, np.dtype[np.floating[Any]]],
     quantile_levels: list[float] | None = None,
-    mask: np.ndarray | None = None,
+    mask: np.ndarray[Any, np.dtype[np.floating[Any]]] | None = None,
 ) -> float:
     """Weighted Quantile Loss (WQL).
 
@@ -178,11 +178,11 @@ def evaluate_dataset(
     for i in range(n):
         item = dataset[i]
 
-        ctx_norm: np.ndarray = item["context"].numpy()  # (V, ctx_len)
-        tgt_raw: np.ndarray = item["target_raw"].numpy()  # (V, H)
-        loc: np.ndarray = item["loc"].numpy()  # (V, 1)
-        scale: np.ndarray = item["scale"].numpy()  # (V, 1)
-        mask: np.ndarray = item["mask"].numpy()  # (H,)
+        ctx_norm: np.ndarray[Any, np.dtype[np.floating[Any]]] = item["context"].numpy()  # (V, ctx_len)
+        tgt_raw: np.ndarray[Any, np.dtype[np.floating[Any]]] = item["target_raw"].numpy()  # (V, H)
+        loc: np.ndarray[Any, np.dtype[np.floating[Any]]] = item["loc"].numpy()  # (V, 1)
+        scale: np.ndarray[Any, np.dtype[np.floating[Any]]] = item["scale"].numpy()  # (V, 1)
+        mask: np.ndarray[Any, np.dtype[np.floating[Any]]] = item["mask"].numpy()  # (H,)
         freq: str = item["freq"]
         pred_len: int = item["prediction_length"]
 

@@ -44,6 +44,7 @@ class TrainMixtureConfig:
     prediction_length: int | None = None
     val_frac: float = 0.2
     max_windows_per_series: int = 10
+    max_series_per_subset: int | None = None
     batch_size: int = 64
     num_workers: int = 4
 
@@ -62,6 +63,7 @@ class TrainMixtureConfig:
     device: str = "cuda"
     checkpoint_dir: Path = Path("checkpoints")
     log_every_n_steps: int = 10
+    tensorboard_log_dir: Path = Path("logs")
 
     # Misc
     seed: int = 42
@@ -79,6 +81,7 @@ def main(cfg: TrainMixtureConfig) -> None:
         prediction_length=cfg.prediction_length,
         val_frac=cfg.val_frac,
         max_windows_per_series=cfg.max_windows_per_series,
+        max_series_per_subset=cfg.max_series_per_subset,
         batch_size=cfg.batch_size,
         num_workers=cfg.num_workers,
         seed=cfg.seed,
@@ -108,6 +111,7 @@ def main(cfg: TrainMixtureConfig) -> None:
         context_feature_dim=cfg.context_feature_dim,
         log_every_n_steps=cfg.log_every_n_steps,
         checkpoint_dir=cfg.checkpoint_dir,
+        tensorboard_log_dir=cfg.tensorboard_log_dir,
     )
 
     history = train_mixture(mixture, train_loader, val_loader, train_cfg)

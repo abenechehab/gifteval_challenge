@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class ExploreConfig:
     """Configuration for the data exploration script."""
 
-    subsets: list[str] = field(default_factory=lambda: ["weather", "m5"])
+    subsets: list[str] = field(default_factory=lambda: ["m5"])
     """Subset names to explore."""
 
     max_series: int = 5
@@ -94,6 +94,8 @@ def explore_subset(name: str, max_series: int, cache_dir: Path | None) -> None:
                 f"shape=({V},{T:6d})  freq={normalize_freq(row['freq']):8s}  "
                 f"nan%={100 * nf:.1f}"
             )
+        else:
+            break
 
     print(f"\n  Lengths : min={min(lengths)}, median={int(np.median(lengths))}, max={max(lengths)}")
     print(f"  NaN frac: mean={100 * float(np.mean(nan_fracs)):.2f}%")

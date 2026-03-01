@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -26,7 +27,7 @@ def normalize_freq(raw_freq: str) -> str:
     return offset.freqstr
 
 
-def _fill_1d(arr: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def _fill_1d(arr: np.ndarray[Any, np.dtype[np.floating[Any]]]) -> tuple[np.ndarray[Any, np.dtype[np.floating[Any]]], np.ndarray[Any, np.dtype[np.floating[Any]]]]:
     """Linear-interpolation fill for a 1-D array.
 
     Returns
@@ -47,7 +48,7 @@ def _fill_1d(arr: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return filled, mask
 
 
-def fill_nan_linear(series: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def fill_nan_linear(series: np.ndarray[Any, np.dtype[np.floating[Any]]]) -> tuple[np.ndarray[Any, np.dtype[np.floating[Any]]], np.ndarray[Any, np.dtype[np.floating[Any]]]]:
     """Fill NaN values with linear interpolation for 1-D or 2-D arrays.
 
     Parameters
@@ -70,6 +71,6 @@ def fill_nan_linear(series: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return filled, mask
 
 
-def nan_fraction(arr: np.ndarray) -> float:
+def nan_fraction(arr: np.ndarray[Any, np.dtype[np.floating[Any]]]) -> float:
     """Return the fraction of NaN values in *arr*."""
     return float(np.isnan(arr).mean())

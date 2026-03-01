@@ -43,7 +43,9 @@ FAST_DEV_SUBSETS: list[str] = [
 class _WindowEntry:
     """Lightweight descriptor of a single training / validation window."""
 
-    series: np.ndarray  # (n_variates, T_slice)  — the relevant time slice
+    series: np.ndarray[
+        Any, np.dtype[np.floating[Any]]
+    ]  # (n_variates, T_slice)  — the relevant time slice
     start_idx: int  # index within *series* where context begins
     freq: str
     dataset_name: str
@@ -181,7 +183,7 @@ class GiftEvalDataset(Dataset[dict[str, Any]]):
         if series.ndim == 1:
             series = series[np.newaxis, :]  # → (1, T)
 
-        n_variates, T = series.shape
+        _, T = series.shape  # n_variates, T
 
         pred_len = self.prediction_length
         if pred_len is None:
