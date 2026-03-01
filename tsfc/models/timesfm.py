@@ -10,7 +10,6 @@ from typing import Any
 
 import numpy as np
 
-from tsfc.data.transforms import freq_to_timesfm_token
 from tsfc.models.base import ForecastingModel, ForecastResult
 from tsfc.models.registry import register
 
@@ -53,18 +52,12 @@ class TimesFMModel(ForecastingModel):
         self.device = device
         self._model: Any = None  # loaded lazily
 
-
     def _load(self) -> None:
         """Lazy-load TimesFM (runs once)."""
         if self._model is not None:
             return
-        try:
-            import timesfm  # type: ignore[import-untyped]
-        except ImportError as exc:
-            raise ImportError(
-                "timesfm is not installed. Run: uv add timesfm"
-            ) from exc
 
+        import timesfm
         import torch
 
         torch.set_float32_matmul_precision("high")
@@ -81,7 +74,7 @@ class TimesFMModel(ForecastingModel):
                 fix_quantile_crossing=True,
             )
         )
-        self._model = model.to(self.device)
+        self._model = model
 
     def predict(
         self,
@@ -108,14 +101,9 @@ class TimesFMModel(ForecastingModel):
         # TimesFM expects a list of 1-D arrays (variable length OK)
         inputs = [clipped[v] for v in range(n_variates)]
 
-        # freq_token is per-series; same for all variates here
-        freq_token = freq_to_timesfm_token(freq)
-        freq_tokens = [freq_token] * n_variates
-
         point_raw, q_raw = self._model.forecast(
             horizon=prediction_length,
             inputs=inputs,
-            freq=freq_tokens,
         )
         # point_raw: (n_variates, prediction_length)
         # q_raw:     (n_variates, prediction_length, n_quantiles)

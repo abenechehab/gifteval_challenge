@@ -48,9 +48,7 @@ class TrainMixtureConfig:
     num_workers: int = 4
 
     # Models
-    model_names: list[str] = field(
-        default_factory=lambda: ["chronos2", "timesfm25", "moirai2"]
-    )
+    model_names: list[str] = field(default_factory=lambda: ["chronos2", "timesfm25", "moirai2"])
     cache_dir: Path = Path("cache/predictions")
 
     # Mixture
@@ -96,9 +94,7 @@ def main(cfg: TrainMixtureConfig) -> None:
         adaptive=cfg.adaptive,
         context_feature_dim=cfg.context_feature_dim,
     )
-    logger.info(
-        "WeightedMixture: %d models, adaptive=%s", len(cfg.model_names), cfg.adaptive
-    )
+    logger.info("WeightedMixture: %d models, adaptive=%s", len(cfg.model_names), cfg.adaptive)
 
     # Training config
     train_cfg = TrainingConfig(

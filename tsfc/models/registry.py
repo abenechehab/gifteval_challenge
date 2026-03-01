@@ -55,8 +55,6 @@ def load_model(name: str, **kwargs: Any) -> ForecastingModel:
         If *name* is not registered.
     """
     if name not in _REGISTRY:
-        raise ValueError(
-            f"Unknown model {name!r}. Available models: {list_models()}"
-        )
+        raise ValueError(f"Unknown model {name!r}. Available models: {list_models()}")
     logger.info("Loading model %r with kwargs %s", name, kwargs)
     return _REGISTRY[name](**kwargs)

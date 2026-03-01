@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 import torch
 
@@ -32,30 +34,6 @@ _FREQ_PERIOD: dict[str, int] = {
     "Y": 1,
     "BA": 1,
     "BAS": 1,
-}
-
-# Canonical freq string → TimesFM frequency token {0, 1, 2}
-# 0 = high-freq (≤daily), 1 = weekly, 2 = low-freq (monthly+)
-_FREQ_TFM_TOKEN: dict[str, int] = {
-    "min": 0,
-    "30min": 0,
-    "h": 0,
-    "D": 0,
-    "W": 1,
-    "W-SUN": 1,
-    "ME": 2,
-    "MS": 2,
-    "M": 2,
-    "QE": 2,
-    "QS": 2,
-    "Q": 2,
-    "QE-DEC": 2,
-    "YE": 2,
-    "YS": 2,
-    "A": 2,
-    "Y": 2,
-    "BA": 2,
-    "BAS": 2,
 }
 
 # Canonical freq string → default prediction horizon (GIFT-Eval convention)
@@ -101,11 +79,6 @@ def freq_to_period(freq: str) -> int:
     return _lookup(_FREQ_PERIOD, freq, 1)
 
 
-def freq_to_timesfm_token(freq: str) -> int:
-    """Return TimesFM frequency token (0=high, 1=medium, 2=low) for *freq*."""
-    return _lookup(_FREQ_TFM_TOKEN, freq, 0)
-
-
 def freq_to_default_horizon(freq: str) -> int:
     """Return the default prediction horizon for *freq* following GIFT-Eval convention."""
     return _lookup(_FREQ_HORIZON, freq, 12)
@@ -117,8 +90,12 @@ def freq_to_default_horizon(freq: str) -> int:
 
 
 def robust_normalize(
-    context: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    context: np.ndarray[Any, np.dtype[np.floating[Any]]],
+) -> tuple[
+    np.ndarray[Any, np.dtype[np.floating[Any]]],
+    np.ndarray[Any, np.dtype[np.floating[Any]]],
+    np.ndarray[Any, np.dtype[np.floating[Any]]],
+]:
     """Normalize *context* using robust statistics (median + MAD-based scale).
 
     Parameters
@@ -140,10 +117,10 @@ def robust_normalize(
 
 
 def denormalize(
-    forecast: np.ndarray,
-    loc: np.ndarray,
-    scale: np.ndarray,
-) -> np.ndarray:
+    forecast: np.ndarray[Any, np.dtype[np.floating[Any]]],
+    loc: np.ndarray[Any, np.dtype[np.floating[Any]]],
+    scale: np.ndarray[Any, np.dtype[np.floating[Any]]],
+) -> np.ndarray[Any, np.dtype[np.floating[Any]]]:
     """Reverse instance normalization: ``forecast * scale + loc``."""
     return forecast * scale + loc
 

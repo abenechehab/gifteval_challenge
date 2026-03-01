@@ -64,9 +64,7 @@ class MoiraiModel(ForecastingModel):
         try:
             from uni2ts.model.moirai2 import Moirai2Module  # type: ignore[import-untyped]
         except ImportError as exc:
-            raise ImportError(
-                "uni2ts is not installed. Run: uv add uni2ts>=1.2.0"
-            ) from exc
+            raise ImportError("uni2ts is not installed. Run: uv add uni2ts>=1.2.0") from exc
 
         repo = f"Salesforce/moirai-2.0-R-{self.size}"
         logger.info("Loading Moirai-2 (%s) from %r …", self.size, repo)
@@ -137,7 +135,10 @@ class MoiraiModel(ForecastingModel):
 
         # samples: (num_samples, prediction_length) for univariate,
         #          (num_samples, n_variates, prediction_length) for multivariate
-        raw_samples: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(forecasts[0].samples)
+        # raw_samples: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(forecasts[0].samples)
+        raw_samples: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(
+            forecasts[0].forecast_array
+        )
 
         if raw_samples.ndim == 2:
             # Univariate: expand to (1, num_samples, H) → (V=1, num_samples, H)

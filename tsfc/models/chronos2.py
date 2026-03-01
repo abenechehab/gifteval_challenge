@@ -54,13 +54,9 @@ class Chronos2Model(ForecastingModel):
         """Lazy-load the Chronos-2 pipeline (runs once)."""
         if self._pipeline is not None:
             return
-        try:
-            import chronos  # type: ignore[import-untyped]
-        except ImportError as exc:
-            raise ImportError(
-                "chronos-forecasting is not installed. "
-                "Run: uv add chronos-forecasting>=2.1.0"
-            ) from exc
+
+        import chronos
+
         logger.info("Loading Chronos-2 pipeline from %r onto %r …", self.model_id, self.device)
         self._pipeline = chronos.Chronos2Pipeline.from_pretrained(
             self.model_id,
@@ -116,7 +112,7 @@ class Chronos2Model(ForecastingModel):
             quantile_levels=_QUANTILE_LEVELS,
             id_column="id",
             timestamp_column="ds",
-            target_columns=["target"],
+            target=["target"],
         )
         if cov_cols:
             predict_kwargs["past_feat_dynamic_real_columns"] = cov_cols
@@ -129,10 +125,7 @@ class Chronos2Model(ForecastingModel):
 
         quantile_forecasts: dict[float, np.ndarray[Any, np.dtype[np.floating[Any]]]] = {
             q: np.stack(
-                [
-                    pred_df[pred_df["id"] == f"v{v}"][str(q)].to_numpy()
-                    for v in range(n_variates)
-                ]
+                [pred_df[pred_df["id"] == f"v{v}"][str(q)].to_numpy() for v in range(n_variates)]
             )
             for q in _QUANTILE_LEVELS
         }

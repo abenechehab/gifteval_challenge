@@ -9,11 +9,10 @@ from pathlib import Path
 from typing import Any
 
 import torch
-import torch.optim as optim
 
 from tsfc.data.transforms import extract_context_features
 from tsfc.models.mixture import WeightedMixture
-from tsfc.train.loss import mae_loss, mase_loss
+from tsfc.train.loss import mae_loss, mase_loss, mse_loss
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +113,7 @@ def train_mixture(
     device = torch.device(config.device if torch.cuda.is_available() else "cpu")
     mixture = mixture.to(device)
 
-    optimizer = optim.Adam(mixture.parameters(), lr=config.lr)
+    optimizer = torch.optim.Adam(mixture.parameters(), lr=config.lr) # type: ignore
 
     history: dict[str, list[float]] = {"train_loss": [], "val_loss": []}
     config.checkpoint_dir.mkdir(parents=True, exist_ok=True)
@@ -156,8 +155,7 @@ def train_mixture(
 
             # Stack per-model predictions: (B', V, H)
             stacked: dict[str, torch.Tensor] = {
-                m: torch.stack(model_preds[m], dim=0).to(device)
-                for m in config.model_names
+                m: torch.stack(model_preds[m], dim=0).to(device) for m in config.model_names
             }
 
             ctx_valid = context[valid_indices]
@@ -178,6 +176,8 @@ def train_mixture(
                 loss = mase_loss(forecast, tgt_valid, ctx_valid, freqs_valid, mask_valid)
             elif config.loss == "mae":
                 loss = mae_loss(forecast, tgt_valid, mask_valid)
+            elif config.loss == "mse":
+                loss = mse_loss(forecast, tgt_valid, mask_valid)
             else:
                 loss = mae_loss(forecast, tgt_valid, mask_valid)
 
@@ -234,8 +234,7 @@ def train_mixture(
                         continue
 
                     stacked = {
-                        m: torch.stack(model_preds[m], dim=0).to(device)
-                        for m in config.model_names
+                        m: torch.stack(model_preds[m], dim=0).to(device) for m in config.model_names
                     }
                     ctx_valid = context[valid_indices]
                     tgt_valid = target[valid_indices]

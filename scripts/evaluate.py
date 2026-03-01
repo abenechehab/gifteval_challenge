@@ -175,7 +175,11 @@ def main(cfg: EvalConfig) -> None:
 
         all_results[subset] = results
         logger.info(
-            "  %s MASE=%.4f ± %.4f  (n=%d)", subset, results["mean"], results["std"], results["n_items"]
+            "  %s MASE=%.4f ± %.4f  (n=%d)",
+            subset,
+            results["mean"],
+            results["std"],
+            results["n_items"],
         )
 
     # Aggregate across subsets

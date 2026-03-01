@@ -6,7 +6,6 @@ from tsfc.data.transforms import (
     extract_context_features,
     freq_to_default_horizon,
     freq_to_period,
-    freq_to_timesfm_token,
     robust_normalize,
 )
 from tsfc.data.utils import fill_nan_linear, nan_fraction, normalize_freq
@@ -18,7 +17,6 @@ __all__ = [
     "denormalize",
     "extract_context_features",
     "freq_to_period",
-    "freq_to_timesfm_token",
     "freq_to_default_horizon",
     "fill_nan_linear",
     "nan_fraction",

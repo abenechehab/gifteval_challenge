@@ -64,11 +64,11 @@ def explore_subset(name: str, max_series: int, cache_dir: Path | None) -> None:
     if cache_dir is not None:
         kwargs["cache_dir"] = str(cache_dir)
 
-    ds = load_dataset(**kwargs) # type: ignore
+    ds = load_dataset(**kwargs)  # type: ignore
     total = len(ds)  # type: ignore[arg-type]
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Subset: {name!r}  ({total} series)")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     lengths: list[int] = []
     nan_fracs: list[float] = []
@@ -92,11 +92,11 @@ def explore_subset(name: str, max_series: int, cache_dir: Path | None) -> None:
             print(
                 f"  [{i:4d}] item_id={row['item_id']!r:30s}  "
                 f"shape=({V},{T:6d})  freq={normalize_freq(row['freq']):8s}  "
-                f"nan%={100*nf:.1f}"
+                f"nan%={100 * nf:.1f}"
             )
 
     print(f"\n  Lengths : min={min(lengths)}, median={int(np.median(lengths))}, max={max(lengths)}")
-    print(f"  NaN frac: mean={100*float(np.mean(nan_fracs)):.2f}%")
+    print(f"  NaN frac: mean={100 * float(np.mean(nan_fracs)):.2f}%")
     print(f"  Freqs   : {sorted(freq_seen)}")
     print(f"  #variates: {sorted(n_variates_seen)}")
 
