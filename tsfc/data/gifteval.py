@@ -101,8 +101,8 @@ class GiftEvalDataset(Dataset[dict[str, Any]]):
         cache_dir: Path | None = None,
         seed: int = 42,
     ) -> None:
-        if split not in {"train", "val"}:
-            raise ValueError(f"split must be 'train' or 'val', got {split!r}")
+        if split not in {"train", "val", "test"}:
+            raise ValueError(f"split must be 'train', 'val', or 'test', got {split!r}")
 
         self.context_length = context_length
         self.prediction_length = prediction_length
@@ -213,6 +213,33 @@ class GiftEvalDataset(Dataset[dict[str, Any]]):
             # Check NaN fraction in target
             if nan_fraction(target_slice) > _MAX_NAN_FRAC:
                 logger.debug("Skipping val window for %s/%s: too many NaNs", dataset_name, item_id)
+                return []
+            entries.append(
+                _WindowEntry(
+                    series=series,
+                    start_idx=start_idx,
+                    freq=freq,
+                    dataset_name=dataset_name,
+                    item_id=item_id,
+                    prediction_length=pred_len,
+                    context_length=self.context_length,
+                )
+            )
+        elif self.split == "test":
+            # Single evaluation window placed immediately after the val window:
+            #   val target  = [T_train, T_train + pred_len)
+            #   test context = [T_train + pred_len - ctx_len, T_train + pred_len)
+            #   test target  = [T_train + pred_len, T_train + 2 * pred_len)
+            test_ctx_end = T_train + pred_len
+            start_idx = test_ctx_end - self.context_length
+            test_tgt_end = test_ctx_end + pred_len
+            if start_idx < 0 or test_tgt_end > T:
+                return []
+            target_slice = series[:, test_ctx_end:test_tgt_end]
+            if target_slice.shape[1] < pred_len:
+                return []
+            if nan_fraction(target_slice) > _MAX_NAN_FRAC:
+                logger.debug("Skipping test window for %s/%s: too many NaNs", dataset_name, item_id)
                 return []
             entries.append(
                 _WindowEntry(
@@ -375,9 +402,10 @@ class GiftEvalDataModule:
         self.config = config or GiftEvalDataModuleConfig()
         self._train_dataset: GiftEvalDataset | None = None
         self._val_dataset: GiftEvalDataset | None = None
+        self._test_dataset: GiftEvalDataset | None = None
 
     def setup(self, stage: str | None = None) -> None:
-        """Instantiate train and validation datasets."""
+        """Instantiate train, validation, and test datasets."""
         cfg = self.config
         shared: dict[str, Any] = dict(
             subset_names=cfg.subset_names,
@@ -394,6 +422,8 @@ class GiftEvalDataModule:
             self._train_dataset = GiftEvalDataset(split="train", **shared)
         if stage in (None, "fit", "validate"):
             self._val_dataset = GiftEvalDataset(split="val", **shared)
+        if stage in (None, "test"):
+            self._test_dataset = GiftEvalDataset(split="test", **shared)
 
     def train_dataloader(self) -> DataLoader[dict[str, Any]]:
         """Return the training DataLoader."""
@@ -416,6 +446,20 @@ class GiftEvalDataModule:
         assert self._val_dataset is not None
         return DataLoader(
             self._val_dataset,
+            batch_size=self.config.batch_size,
+            shuffle=False,
+            num_workers=self.config.num_workers,
+            collate_fn=collate_fn,
+            pin_memory=True,
+        )
+
+    def test_dataloader(self) -> DataLoader[dict[str, Any]]:
+        """Return the test DataLoader."""
+        if self._test_dataset is None:
+            self.setup("test")
+        assert self._test_dataset is not None
+        return DataLoader(
+            self._test_dataset,
             batch_size=self.config.batch_size,
             shuffle=False,
             num_workers=self.config.num_workers,
