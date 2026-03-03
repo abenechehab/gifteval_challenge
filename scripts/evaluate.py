@@ -121,6 +121,15 @@ class EvalConfig:
     adaptive: bool = False
     context_feature_dim: int = 5
 
+    # Boosting head — must match the settings used during training
+    boosting: bool = False
+    boosting_prediction_length: int = 64
+    boosting_patch_size: int = 16
+    boosting_d_model: int = 64
+    boosting_n_heads: int = 4
+    boosting_n_layers: int = 2
+    boosting_dropout: float = 0.1
+
 
 def main(cfg: EvalConfig) -> None:
     """Run evaluation and print / save results."""
@@ -157,6 +166,14 @@ def main(cfg: EvalConfig) -> None:
                 model_names=cfg.model_names_in_checkpoint,
                 adaptive=cfg.adaptive,
                 context_feature_dim=cfg.context_feature_dim,
+                boosting=cfg.boosting,
+                context_length=cfg.context_length,
+                prediction_length=cfg.boosting_prediction_length,
+                boosting_patch_size=cfg.boosting_patch_size,
+                boosting_d_model=cfg.boosting_d_model,
+                boosting_n_heads=cfg.boosting_n_heads,
+                boosting_n_layers=cfg.boosting_n_layers,
+                boosting_dropout=cfg.boosting_dropout,
             )
             mixture.load_state_dict(ckpt["model_state"])
             mixture.eval()
@@ -261,7 +278,7 @@ def _evaluate_mixture_with_cache(
             ctx_feats = extract_context_features(ctx_t)
 
         with torch.no_grad():
-            forecast_t = mixture(model_preds, ctx_feats)  # (1, V, H)
+            forecast_t = mixture(model_preds, ctx_feats, context=ctx_t)  # (1, V, H)
 
         # Denormalize forecast
         forecast_np = denormalize(

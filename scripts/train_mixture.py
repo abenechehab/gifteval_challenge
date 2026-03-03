@@ -56,6 +56,15 @@ class TrainMixtureConfig:
     adaptive: bool = False
     context_feature_dim: int = 5
 
+    # Boosting head (patch-transformer residual correction)
+    boosting: bool = False
+    boosting_prediction_length: int = 64
+    boosting_patch_size: int = 16
+    boosting_d_model: int = 64
+    boosting_n_heads: int = 4
+    boosting_n_layers: int = 2
+    boosting_dropout: float = 0.1
+
     # Training
     loss: str = "mase"
     lr: float = 0.01
@@ -96,8 +105,21 @@ def main(cfg: TrainMixtureConfig) -> None:
         model_names=cfg.model_names,
         adaptive=cfg.adaptive,
         context_feature_dim=cfg.context_feature_dim,
+        boosting=cfg.boosting,
+        context_length=cfg.context_length,
+        prediction_length=cfg.boosting_prediction_length,
+        boosting_patch_size=cfg.boosting_patch_size,
+        boosting_d_model=cfg.boosting_d_model,
+        boosting_n_heads=cfg.boosting_n_heads,
+        boosting_n_layers=cfg.boosting_n_layers,
+        boosting_dropout=cfg.boosting_dropout,
     )
-    logger.info("WeightedMixture: %d models, adaptive=%s", len(cfg.model_names), cfg.adaptive)
+    logger.info(
+        "WeightedMixture: %d models, adaptive=%s, boosting=%s",
+        len(cfg.model_names),
+        cfg.adaptive,
+        cfg.boosting,
+    )
 
     # Training config
     train_cfg = TrainingConfig(

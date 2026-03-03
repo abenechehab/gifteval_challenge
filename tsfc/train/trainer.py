@@ -179,8 +179,8 @@ def train_mixture(
             if config.adaptive:
                 ctx_feats = extract_context_features(ctx_valid)  # (B', 5)
 
-            # Forward pass through mixture
-            forecast = mixture(stacked, ctx_feats)  # (B', V, H)
+            # Forward pass through mixture (context passed for boosting, ignored otherwise)
+            forecast = mixture(stacked, ctx_feats, context=ctx_valid)  # (B', V, H)
 
             # Compute loss
             if config.loss == "mase":
@@ -291,7 +291,7 @@ def train_mixture(
                     if config.adaptive:
                         ctx_feats = extract_context_features(ctx_valid)
 
-                    forecast = mixture(stacked, ctx_feats)
+                    forecast = mixture(stacked, ctx_feats, context=ctx_valid)
                     loss = mae_loss(forecast, tgt_valid, mask_valid)
                     val_losses.append(loss.item())
 
