@@ -13,3 +13,4 @@ wheels/
 .pytest_cache/
 cache/
 checkpoints/
+logs/

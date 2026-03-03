@@ -26,9 +26,10 @@ Usage
 from __future__ import annotations
 
 import csv
+import json
 import logging
 import time
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -559,6 +560,12 @@ def main(cfg: Config) -> None:
     # Timestamped run directory
     run_dir = make_run_dir(cfg.log_dir, cfg.run_name)
     logger.info("Run directory: %s", run_dir)
+
+    # Save config to JSON
+    config_path = run_dir / "config.json"
+    with open(config_path, "w") as f:
+        json.dump(asdict(cfg), f, indent=2, default=str)
+    logger.info("Config saved to %s", config_path)
 
     writer = SummaryWriter(log_dir=str(run_dir), comment=cfg.run_name or "")
     logger.info("TensorBoard writer: %s", run_dir)
