@@ -82,17 +82,9 @@ uv pip install -e .[dev]
 
 ---
 
-## Workflow
-
-```
-explore_data.py  →  train_mixture_online.py  →  evaluate.py
-```
+## Scripts
 
 `train_mixture_online.py` is the **primary training script**. It runs the frozen backbone models live during every training step — no pre-caching required. A full train / val / test split is used, all metrics are logged to TensorBoard and CSV, and individual backbone model baselines are compared automatically at the end.
-
----
-
-## Scripts
 
 All scripts use [tyro](https://brentyi.github.io/tyro/) for CLI parsing. Every argument maps 1-to-1 to a field in the script's `@dataclass` config. Pass `--help` to any script to see the full argument list and defaults.
 
@@ -106,7 +98,7 @@ Trains the `WeightedMixture` model with **on-the-fly backbone inference** — no
 |---|---|
 | **train** | Random windows sampled from the first `(1 − val_frac)` of each series |
 | **val** | Single window whose target immediately follows the train boundary |
-| **test** | Single window whose target follows the val window (completely unseen) |
+| **test** | Single window whose target follows the val window |
 
 At the end of training the script evaluates the mixture **and each individual backbone model** on the test split, prints a comparison table, logs everything to TensorBoard, and writes results to CSV.
 
@@ -160,6 +152,8 @@ uv run python scripts/train_mixture_online.py [OPTIONS]
 | `--device` | `str` | `"cuda"` | Torch device for inference and mixture |
 
 **Mixture arguments:**
+
+* Main file: `tsfc/models/mixture.py`
 
 | Argument | Type | Default | Description |
 |---|---|---|---|
@@ -241,26 +235,6 @@ uv run python scripts/train_mixture_online.py \
 tensorboard --logdir logs/
 ```
 
-**Final output example:**
-
-```
-============================================================
-FINAL TEST RESULTS
-============================================================
-Model                      Loss        MSE        MAE       MASE
-------------------------------------------------------------
-mixture              0.8712     0.6431     0.5210     0.8712
-chronos2             0.9341     0.7122     0.5689     0.9341
-timesfm25            0.9015     0.6834     0.5480     0.9015
-moirai2              0.9208     0.7001     0.5601     0.9208
-============================================================
-CSV:         logs/2026-03-03_14-22-01_static_mase/results.csv
-TensorBoard: tensorboard --logdir logs/2026-03-03_14-22-01_static_mase
-============================================================
-```
-
----
-
 ### `scripts/explore_data.py`
 
 Inspect subset shapes, lengths, frequencies, and NaN rates before committing to a full run.
@@ -285,93 +259,6 @@ uv run python scripts/explore_data.py \
 
 ---
 
-### `scripts/evaluate.py`
-
-Evaluate a single registered backbone model or a trained `WeightedMixture` checkpoint on the validation split. When evaluating a mixture checkpoint, pre-cached backbone predictions must be available.
-
-Exactly one of `--model_name` or `--checkpoint` must be provided.
-
-```bash
-# Evaluate Chronos-2 directly
-uv run python scripts/evaluate.py \
-    --model_name chronos2 \
-    --subsets weather m5 \
-    --metric mase
-
-# Evaluate a saved mixture checkpoint (requires cache)
-uv run python scripts/evaluate.py \
-    --checkpoint checkpoints/mixture_epoch050.pt \
-    --subsets weather m5 traffic_hourly \
-    --metric mase \
-    --output_file results/mixture_eval.json
-
-# Evaluate a checkpoint trained with boosting
-uv run python scripts/evaluate.py \
-    --checkpoint checkpoints/mixture_epoch050.pt \
-    --boosting \
-    --boosting_prediction_length 24 \
-    --subsets weather m5
-```
-
-> **Note:** `--adaptive`, `--boosting`, and all `--boosting_*` flags must match the settings used during training so the checkpoint's `state_dict` maps correctly onto the reconstructed model.
-
----
-
-### `scripts/cache_predictions.py` (optional)
-
-Pre-run frozen backbone models over all configured windows and save predictions to disk. Only needed for the legacy `train_mixture.py` workflow or for `evaluate.py` mixture evaluation.
-
-```bash
-# Cache Chronos-2 and TimesFM on two subsets
-uv run python scripts/cache_predictions.py \
-    --models chronos2 timesfm25 \
-    --subsets weather traffic_hourly
-
-# Full cache run
-uv run python scripts/cache_predictions.py \
-    --models chronos2 timesfm25 moirai2 \
-    --subsets traffic_hourly weather m5 monash_m3_monthly \
-    --device cuda \
-    --output_dir cache/predictions
-```
-
-**Cache layout:**
-
-```
-cache/predictions/
-└── <model_name>/
-    └── <subset_name>.pt        # torch.save'd dict
-        key:   "{item_id}__{window_start}"
-        value: {"point": np.ndarray (V, H), "quantiles": dict | None}
-```
-
----
-
-### `scripts/train_mixture.py` (legacy)
-
-Cache-based training: reads backbone predictions from disk. Requires running `cache_predictions.py` first. For new experiments prefer `train_mixture_online.py`.
-
-```bash
-uv run python scripts/train_mixture.py \
-    --subsets weather m5 \
-    --loss mase \
-    --epochs 50
-```
-
----
-
-## Running tests
-
-```bash
-uv run pytest
-# with coverage
-uv run pytest --cov=tsfc --cov-report=term-missing
-```
-
-Tests are offline (no HuggingFace downloads required) and cover frequency normalization, NaN filling, normalization round-trips, context feature extraction, `GiftEvalDataset` window building (train/val splits), `WeightedMixture` forward pass (static and adaptive), all loss functions, and all evaluation metrics.
-
----
-
 ## Linting and type-checking
 
 ```bash
@@ -381,12 +268,4 @@ uv run pyright
 
 ---
 
-## Key design notes
-
-- **On-the-fly inference** — `train_mixture_online.py` runs frozen backbone models live inside each training step. Context is denormalized before passing to the model, and the raw-scale prediction is re-normalized before being fed to the mixture. No disk cache is needed.
-- **Three-split protocol** — train / val / test windows are temporally non-overlapping: the train boundary is at `T_train = max(ctx+pred, (1−val_frac)·T)`; the val target immediately follows; the test target follows the val target. Shorter series that cannot fit all three windows are silently dropped from val/test.
-- **Boosting head** — when `--boosting` is enabled, a `BoostingForecaster` (patch transformer, channel-independent) adds a learnable residual on top of the weighted blend. Its output head is zero-initialized, so training always starts from the mixture-only baseline.
-- **Lazy model loading** — backbone weights are loaded on first `predict()` call; importing the package does not trigger downloads.
-- **Instance normalization** — every context window is normalized with its own robust (median + MAD) statistics before being passed to models, then denormalized before metric computation. TimesFM normalizes internally; do not double-normalize.
-- **Frequency handling** — all frequency strings are canonicalized through `pandas.tseries.frequencies.to_offset`. `"30T"` and `"30min"` are treated identically.
-- **NaN policy** — context NaNs are filled by linear interpolation. Target windows with > 20 % NaN are skipped entirely.
+By: Abdelhakim Benechehab.
