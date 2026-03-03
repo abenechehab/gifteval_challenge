@@ -55,33 +55,28 @@ Each backbone model is an optional extra defined in `pyproject.toml`. Install on
 #### Chronos-2
 
 ```bash
-uv sync --extra chronos
+uv pip install -e .[chronos]
 # installs: chronos-forecasting>=2.1.0
 ```
 
 #### TimesFM-2.5
 
 ```bash
-uv sync --extra timesfm
+uv pip install -e .[timesfm]
 # installs: timesfm from git+https://github.com/google-research/timesfm.git
 ```
 
 #### Moirai-2
 
 ```bash
-uv sync --extra moirai
-# installs: uni2ts>=1.2.0 (gluonts is pulled in as a transitive dependency)
+uv pip install -e .[moirai]
+# installs: uni2ts>=1.2.0
 ```
-
-> **Solver conflicts:** `uni2ts` pins `gluonts~=0.14.3` and `datasets~=2.17.1`, which can clash with other extras. If `uv` cannot resolve, install directly:
-> ```bash
-> uv run pip install "uni2ts>=1.2.0"
-> ```
 
 ### 3. Dev tools
 
 ```bash
-uv sync --extra dev
+uv pip install -e .[dev]
 # installs: pytest, pytest-cov, ruff, pyright
 ```
 
