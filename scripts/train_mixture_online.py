@@ -87,7 +87,7 @@ class Config:
 
     # Boosting head (patch-transformer residual correction)
     boosting: bool = False
-    boosting_prediction_length: int = 64
+    boosting_prediction_length: int = 12
     boosting_patch_size: int = 16
     boosting_d_model: int = 64
     boosting_n_heads: int = 4
@@ -108,6 +108,12 @@ class Config:
 
     # Misc
     seed: int = 42
+
+    def __post_init__(self):
+            if self.boosting and self.prediction_length is not None:
+                assert self.boosting_prediction_length >= self.prediction_length, (
+                    "When boosting is enabled, boosting_prediction_length must be at least prediction_length."
+                )
 
 
 # ---------------------------------------------------------------------------

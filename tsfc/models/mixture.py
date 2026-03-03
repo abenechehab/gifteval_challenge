@@ -124,7 +124,7 @@ class BoostingForecaster(nn.Module):
         -------
         Tensor ``(B, V, prediction_length)``
         """
-        B, V, T = context.shape
+        B, V, _ = context.shape
 
         # Truncate to a multiple of patch_size
         T_use = self.n_patches * self.patch_size
